@@ -178,9 +178,30 @@ def _compute_fallback(
     if not fallback_name:
         return None, 0.0
 
-    # Quality: how relevant is the fallback? Higher if it's in the visible set.
-    quality = fallback.get("confidence", 0.5)
-    return fallback_name, quality
+    # Fallback quality scoring (4 dimensions, weighted):
+    # - Relevance (0.35): does the fallback address the user's need?
+    # - Safety (0.30): is it within appropriate risk class?
+    # - Utility (0.20): can the user accomplish something useful?
+    # - Actionability (0.15): does it produce a concrete next step?
+    confidence = fallback.get("confidence", 0.5)
+
+    # Relevance: higher if confidence is high (model thinks it fits)
+    relevance = confidence
+
+    # Safety: higher for lower execution classes
+    fallback_tool = next((t for t in tool_filter.visible if t.name == fallback_name), None)
+    safety_scores = {"read_only": 1.0, "advisory": 0.95, "external_action": 0.7, "state_mutation": 0.5, "high_impact": 0.2}
+    safety = safety_scores.get(fallback_tool.execution_class, 0.5) if fallback_tool else 0.5
+
+    # Utility: non-zero if the fallback is actionable (not just "suggest_resolution")
+    utility = 0.9 if fallback_name not in ("suggest_resolution", "analyze_sentiment") else 0.5
+
+    # Actionability: higher if the tool produces a concrete output
+    actionable_tools = {"freeze_account", "page_human", "snapshot_forensics", "process_refund", "send_message"}
+    actionability = 0.9 if fallback_name in actionable_tools else 0.5
+
+    quality = (0.35 * relevance + 0.30 * safety + 0.20 * utility + 0.15 * actionability)
+    return fallback_name, round(quality, 3)
 
 
 def ask_bot(
