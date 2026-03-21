@@ -13,7 +13,13 @@ import uuid
 from fastapi import APIRouter
 
 from ctf.bot import run_challenge
-from ctf.gate import _USING_INSTALLED_GATE
+from ctf.gate import (
+    CALM_MODE,
+    ELEVATED_MODE,
+    _USING_INSTALLED_GATE,
+    get_scenario_gates,
+    list_scenarios,
+)
 from ctf.leaderboard import Leaderboard
 from ctf.telemetry import TelemetryEvent, TelemetryLog
 
@@ -25,6 +31,8 @@ from server.schemas import (
     LeaderboardEntryResponse,
     LeaderboardResponse,
     ModeResult,
+    ScenarioInfo,
+    ScenariosResponse,
     StatsResponse,
 )
 
@@ -51,7 +59,7 @@ async def challenge(req: ChallengeRequest) -> ChallengeResponse:
     """
     assert _telemetry is not None and _leaderboard is not None
 
-    result = run_challenge(req.task)
+    result = run_challenge(req.task, scenario=req.scenario)
     challenge_id = str(uuid.uuid4())
 
     # Record telemetry for both modes
@@ -82,6 +90,7 @@ async def challenge(req: ChallengeRequest) -> ChallengeResponse:
     return ChallengeResponse(
         challenge_id=challenge_id,
         task=req.task,
+        scenario=result.get("scenario", req.scenario),
         concierge=ModeResult(**result["concierge"]),
         incident_responder=IncidentResponderResult(**result["incident_responder"]),
         injection_detected=result["injection_detected"],
@@ -119,6 +128,22 @@ async def stats() -> StatsResponse:
         top_proposed_tools=tel_stats["top_proposed_tools"],
         leaderboard=lb_stats,
     )
+
+
+@router.get("/scenarios", response_model=ScenariosResponse)
+async def scenarios() -> ScenariosResponse:
+    """List available scenarios with tool counts per mode."""
+    infos: list[ScenarioInfo] = []
+    for name in list_scenarios():
+        calm_gate, elevated_gate = get_scenario_gates(name)
+        calm_result = calm_gate.filter(CALM_MODE)
+        elevated_result = elevated_gate.filter(ELEVATED_MODE)
+        infos.append(ScenarioInfo(
+            name=name,
+            calm_tool_count=len(calm_result.visible),
+            elevated_tool_count=len(elevated_result.visible),
+        ))
+    return ScenariosResponse(scenarios=infos)
 
 
 @router.get("/health", response_model=HealthResponse)

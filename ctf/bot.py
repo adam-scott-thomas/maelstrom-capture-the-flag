@@ -18,6 +18,7 @@ from ctf.gate import (
     ToolFilter,
     build_calm_gate,
     build_elevated_gate,
+    get_scenario_gates,
 )
 from ctf.taxonomy import classify_injection
 from ctf.telemetry import TelemetryEvent
@@ -48,7 +49,9 @@ class MockLLMProvider:
     """
 
     # Keyword-to-tool mapping, checked in priority order.
+    # Covers all scenarios: support, devops, finance, and moderation.
     _TOOL_KEYWORDS: list[tuple[list[str], str, str]] = [
+        # --- Support scenario ---
         (["delete", "remove", "close my account", "terminate"],
          "delete_account",
          "User requested account deletion."),
@@ -85,6 +88,114 @@ class MockLLMProvider:
         (["escalate", "human", "operator", "manager", "supervisor", "page"],
          "page_human",
          "Escalating to human operator."),
+
+        # --- DevOps scenario ---
+        (["deploy", "release", "push to prod", "ship it"],
+         "deploy_to_production",
+         "Deploying new code to production."),
+        (["drop database", "drop db", "destroy database", "wipe database"],
+         "drop_database",
+         "Dropping a database permanently."),
+        (["restart", "reboot", "bounce"],
+         "restart_service",
+         "Restarting a running service."),
+        (["scale", "autoscale", "add instances", "more instances", "scale up", "scale down"],
+         "scale_instances",
+         "Scaling service instances."),
+        (["logs", "log file", "error log", "view logs"],
+         "view_logs",
+         "Viewing application logs."),
+        (["health check", "health status", "is it up", "service health"],
+         "check_health",
+         "Checking service health status."),
+        (["metrics", "performance", "latency", "throughput"],
+         "view_metrics",
+         "Viewing performance metrics."),
+        (["diagnostics", "diagnose", "debug"],
+         "run_diagnostics",
+         "Running system diagnostics."),
+        (["dashboard", "infrastructure", "infra"],
+         "read_only_dashboard",
+         "Opening read-only infrastructure dashboard."),
+        (["snapshot state", "capture state", "save state"],
+         "snapshot_state",
+         "Capturing current system state for investigation."),
+        (["page oncall", "oncall", "on-call", "page engineer"],
+         "page_oncall",
+         "Paging the on-call engineer."),
+        (["maintenance mode", "maintenance"],
+         "enable_maintenance_mode",
+         "Enabling maintenance mode."),
+
+        # --- Finance scenario ---
+        (["transfer", "move funds", "send money", "wire transfer"],
+         "transfer_funds",
+         "Transferring funds between accounts."),
+        (["approve loan", "loan approval", "approve application"],
+         "approve_loan",
+         "Approving a loan application."),
+        (["wire", "send wire"],
+         "send_wire",
+         "Sending a wire transfer."),
+        (["balance", "how much", "account balance"],
+         "view_balance",
+         "Viewing account balance."),
+        (["statement", "generate statement", "account statement"],
+         "generate_statement",
+         "Generating account statement."),
+        (["interest", "calculate interest", "interest rate"],
+         "calculate_interest",
+         "Calculating interest projections."),
+        (["flag transaction", "flag", "suspicious transaction"],
+         "flag_transaction",
+         "Flagging a transaction for review."),
+        (["beneficiary", "update beneficiary", "change beneficiary"],
+         "update_beneficiary",
+         "Updating payment beneficiary."),
+        (["freeze transaction", "hold transaction"],
+         "freeze_transaction",
+         "Freezing a pending transaction."),
+        (["compliance hold", "compliance"],
+         "compliance_hold",
+         "Placing compliance hold on account."),
+        (["compliance officer", "page compliance"],
+         "page_compliance_officer",
+         "Escalating to compliance officer."),
+
+        # --- Moderation scenario ---
+        (["ban", "permanent ban", "ban user", "ban this"],
+         "ban_user",
+         "Permanently banning a user."),
+        (["delete all posts", "delete all", "remove all posts", "wipe posts"],
+         "delete_all_posts",
+         "Deleting all of a user's posts."),
+        (["report", "content report", "view reports", "flagged content"],
+         "view_reports",
+         "Viewing content reports."),
+        (["user history", "content history", "post history"],
+         "view_user_history",
+         "Viewing user's content history."),
+        (["analyze content", "policy violation", "check content"],
+         "analyze_content",
+         "Analyzing content for policy violations."),
+        (["warn", "warning", "send warning"],
+         "send_warning",
+         "Sending a warning to a user."),
+        (["restrict", "restrict account", "limit account"],
+         "restrict_account",
+         "Temporarily restricting an account."),
+        (["approve post", "approve", "unblock post"],
+         "approve_post",
+         "Approving a flagged post."),
+        (["temporary restrict", "temp restrict"],
+         "temporary_restrict",
+         "Applying temporary content restriction."),
+        (["queue for review", "queue review", "human review"],
+         "queue_for_review",
+         "Queuing content for human review."),
+        (["trust safety", "trust & safety", "trust and safety", "page trust"],
+         "page_trust_safety",
+         "Escalating to Trust & Safety team."),
     ]
 
     def propose_tool(
@@ -207,12 +318,13 @@ def _compute_fallback(
 def ask_bot(
     task: str,
     mode: str,
+    scenario: str = "support",
     llm_provider: LLMProvider | MockLLMProvider | None = None,
 ) -> dict[str, Any]:
     """Run a task through the appropriate gate and get an LLM tool proposal.
 
     This is the core CTF function. It:
-    1. Builds the gate for the requested mode
+    1. Builds the gate for the requested mode and scenario
     2. Filters tools at the mode's threat level
     3. Asks the LLM to propose a tool from the visible set
     4. Checks if the proposal would be accepted
@@ -223,6 +335,7 @@ def ask_bot(
     Args:
         task: The user's input text (the "attack").
         mode: Either "calm" or "elevated".
+        scenario: Scenario name (support, devops, finance, moderation).
         llm_provider: Optional LLM backend. Falls back to MockLLMProvider.
 
     Returns:
@@ -233,12 +346,13 @@ def ask_bot(
         llm_provider = MockLLMProvider()
 
     # Build gate and filter
+    calm_gate, elevated_gate = get_scenario_gates(scenario)
     if mode == "elevated":
-        gate = build_elevated_gate()
+        gate = elevated_gate
         mode_value = ELEVATED_MODE
         mode_label = "incident_responder"
     else:
-        gate = build_calm_gate()
+        gate = calm_gate
         mode_value = CALM_MODE
         mode_label = "concierge"
 
@@ -284,6 +398,7 @@ def ask_bot(
 
 def run_challenge(
     task: str,
+    scenario: str = "support",
     llm_provider: LLMProvider | MockLLMProvider | None = None,
 ) -> dict[str, Any]:
     """Run a task through BOTH gates (calm AND elevated) and return the comparison.
@@ -293,14 +408,15 @@ def run_challenge(
 
     Args:
         task: The user's input text.
+        scenario: Scenario name (support, devops, finance, moderation).
         llm_provider: Optional LLM backend.
 
     Returns:
         Dict with concierge result, incident_responder result, injection
         analysis, and the explanatory "the_point" message.
     """
-    calm_result = ask_bot(task, "calm", llm_provider)
-    elevated_result = ask_bot(task, "elevated", llm_provider)
+    calm_result = ask_bot(task, "calm", scenario, llm_provider)
+    elevated_result = ask_bot(task, "elevated", scenario, llm_provider)
 
     injection_detected = calm_result["injection_detected"] or elevated_result["injection_detected"]
     injection_type = calm_result["injection_taxonomy"] or elevated_result["injection_taxonomy"]
@@ -346,6 +462,7 @@ def run_challenge(
 
     return {
         "task": task,
+        "scenario": scenario,
         "concierge": {
             "mode": calm_result["mode"],
             "role": "Helpful Concierge",
