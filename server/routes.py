@@ -16,7 +16,6 @@ from ctf.bot import run_challenge
 from ctf.gate import (
     CALM_MODE,
     ELEVATED_MODE,
-    _USING_INSTALLED_GATE,
     get_scenario_gates,
     list_scenarios,
 )
@@ -152,5 +151,5 @@ async def health() -> HealthResponse:
     return HealthResponse(
         status="ok",
         version="1.0.0",
-        gate_backend="maelstrom_gate" if _USING_INSTALLED_GATE else "inline",
+        gate_backend="maelstrom_gate",
     )
