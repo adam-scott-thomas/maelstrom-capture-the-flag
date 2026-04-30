@@ -379,7 +379,7 @@ def ask_bot(
     return {
         "mode": mode_value,
         "mode_label": mode_label,
-        "mode_status": tool_filter.mode_status,
+        "mode_zone": tool_filter.mode_zone,
         "task_text": task,
         "visible_manifest": tuple(tool_filter.visible_names),
         "suppressed_tools": tuple(tool_filter.suppressed_names),

@@ -50,10 +50,10 @@ class TestCalmGate:
         result = gate.filter(CALM_MODE)
         assert len(result.suppressed) == 0
 
-    def test_calm_gate_mode_status_is_normal(self) -> None:
+    def test_calm_gate_mode_zone_is_normal(self) -> None:
         gate = build_calm_gate()
         result = gate.filter(CALM_MODE)
-        assert result.mode_status == "normal"
+        assert result.mode_zone == "normal"
 
     def test_calm_gate_does_not_have_crisis_tools(self) -> None:
         gate = build_calm_gate()
@@ -119,10 +119,10 @@ class TestElevatedGate:
         result = gate.filter(ELEVATED_MODE)
         assert "page_human" in result.visible_names
 
-    def test_elevated_gate_mode_status_is_elevated(self) -> None:
+    def test_elevated_gate_mode_zone_is_elevated(self) -> None:
         gate = build_elevated_gate()
         result = gate.filter(ELEVATED_MODE)
-        assert result.mode_status == "elevated"
+        assert result.mode_zone == "elevated"
 
     def test_elevated_gate_all_expected_tools_present(self) -> None:
         gate = build_elevated_gate()

@@ -253,13 +253,13 @@ def get_tool_diff(calm_gate: Gate, elevated_gate: Gate) -> dict[str, Any]:
     return {
         "calm": {
             "mode": CALM_MODE,
-            "mode_status": calm_result.mode_status,
+            "mode_zone": calm_result.mode_zone,
             "tool_count": len(calm_result.visible),
             "tools": calm_result.visible_names,
         },
         "elevated": {
             "mode": ELEVATED_MODE,
-            "mode_status": elevated_result.mode_status,
+            "mode_zone": elevated_result.mode_zone,
             "tool_count": len(elevated_result.visible),
             "tools": elevated_result.visible_names,
             "suppressed": elevated_result.suppressed_names,
