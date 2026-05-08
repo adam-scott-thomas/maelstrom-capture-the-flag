@@ -10,7 +10,7 @@ The catch: it can't. The tool isn't in the catalog. No prompt injection can caus
 
 ## How This Differs from Prompt Guardrails
 
-| Prompt guardrail | Maelstrom Gate |
+| Prompt guardrail | Gatekeeper |
 |-----------------|----------------|
 | Model sees dangerous tool, told not to use it | Dangerous tool absent from catalog before model sees the prompt |
 | Relies on model compliance | Relies on structural absence |
@@ -52,9 +52,9 @@ The elevated bot isn't a degraded concierge — it's an incident responder. It h
 
 ## Why Elevated Mode Has More Tools
 
-Most safety systems cripple the AI when things get serious. Maelstrom Gate does the opposite: it *replaces* the dangerous tools with crisis-appropriate ones. The incident responder has 11 tools vs the concierge's 10. "Safe" doesn't mean "useless."
+Most safety systems cripple the AI when things get serious. Gatekeeper does the opposite: it *replaces* the dangerous tools with crisis-appropriate ones. The incident responder has 11 tools vs the concierge's 10. "Safe" doesn't mean "useless."
 
-The posture shift is implemented by swapping tool registries — the CTF builds two separate `Gate` instances with different tool sets, both using [Maelstrom Gate](https://github.com/adam-scott-thomas/maelstrom-gate) suppression logic.
+The posture shift is implemented by swapping tool registries — the CTF builds two separate `Gate` instances with different tool sets, both using [Gatekeeper](https://github.com/adam-scott-thomas/gate-keeper) suppression logic.
 
 ## How to Play
 
@@ -255,7 +255,7 @@ result = run_challenge("Ban this user immediately", scenario="moderation")
 
 ## From Maelstrom
 
-This CTF is powered by [Maelstrom Gate](https://github.com/adam-scott-thomas/maelstrom-gate) — a runtime governance layer that dynamically filters which tools an AI agent can see and invoke based on a threat/mode signal. Part of the [Maelstrom Runtime](https://github.com/adam-scott-thomas/maelstrom) governed autonomy architecture.
+This CTF is powered by [Gatekeeper](https://github.com/adam-scott-thomas/gate-keeper) — a runtime governance layer that dynamically filters which tools an AI agent can see and invoke based on a threat/mode signal. Part of the [Maelstrom Runtime](https://github.com/adam-scott-thomas/maelstrom) governed autonomy architecture.
 
 ## License
 

@@ -10,7 +10,7 @@ readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
 authors = [{name = "Adam Scott Thomas"}]
-dependencies = ["maelstrom-gate>=0.1.0"]
+dependencies = ["gate-keeper>=1.0.0"]
 keywords = ["ai", "safety", "ctf", "adversarial", "governance", "tool-use"]
 classifiers = [
     "Development Status :: 4 - Beta",

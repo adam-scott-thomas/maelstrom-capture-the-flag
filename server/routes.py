@@ -151,5 +151,5 @@ async def health() -> HealthResponse:
     return HealthResponse(
         status="ok",
         version="1.0.0",
-        gate_backend="maelstrom_gate",
+        gate_backend="gatekeeper",
     )

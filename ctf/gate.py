@@ -3,14 +3,14 @@
 Builds pre-configured gates representing distinct operational personas
 across multiple scenarios (support, devops, finance, moderation).
 
-Requires maelstrom_gate (gate-core). This is a hard dependency — the CTF
+Requires gatekeeper (gate-core). This is a hard dependency — the CTF
 exists to demonstrate Gate, not to work without it.
 """
 from __future__ import annotations
 
 from typing import Any
 
-from maelstrom_gate import Gate, Tool, ToolFilter
+from gatekeeper import Gate, Tool, ToolFilter
 
 
 # ---------------------------------------------------------------------------
